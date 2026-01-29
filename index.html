@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购流程时间计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        select, input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 30px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>采购流程时间计算器</h1>
+        <form id="calculator-form">
+            <div class="form-group">
+                <label for="procurement-method">采购方式</label>
+                <select id="procurement-method">
+                    <option value="direct-no-public">直接采购（非公示）</option>
+                    <option value="direct-public">直接采购（公示）</option>
+                    <option value="inquiry-post">邀请/公开询比(资格后审)</option>
+                    <option value="inquiry-pre">邀请/公开询比(资格预审)</option>
+                    <option value="tender-post">邀请/公开招标(资格后审)</option>
+                    <option value="tender-pre">邀请/公开招标(资格预审)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="start-date">开始时间</label>
+                <input type="date" id="start-date" required>
+            </div>
+            <button type="submit">生成时间计划</button>
+        </form>
+        <div class="result" id="result">
+            <!-- 结果将在这里显示 -->
+        </div>
+    </div>
+
+    <script>
+        // 采购流程数据
+        const procurementData = [
+            { id: 1, name: "需求核对确认", times: { "direct-no-public": 2, "direct-public": 2, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 5, "tender-pre": 5 } },
+            { id: 2, name: "采购方案拟定", times: { "direct-no-public": 4, "direct-public": 4, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 8, "tender-pre": 8 } },
+            { id: 3, name: "采购方案审批", times: { "direct-no-public": 5, "direct-public": 5, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 7, "tender-pre": 7 } },
+            { id: 4, name: "公告（邀请函）发布及采购文件发售", times: { "direct-no-public": 0, "direct-public": 4, "inquiry-post": 4, "inquiry-pre": 4, "tender-post": 6, "tender-pre": 6 } },
+            { id: 5, name: "资格预审文件应答", times: { "direct-no-public": 0, "direct-public": 0, "inquiry-post": 0, "inquiry-pre": 7, "tender-post": 0, "tender-pre": 7 } },
+            { id: 6, name: "资格预审审批", times: { "direct-no-public": 0, "direct-public": 0, "inquiry-post": 0, "inquiry-pre": 3, "tender-post": 0, "tender-pre": 3 } },
+            { id: 7, name: "供应商采购文件应答", times: { "direct-no-public": 3, "direct-public": 3, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 16, "tender-pre": 16 } },
+            { id: 8, name: "双方商务谈判、评标", times: { "direct-no-public": 7, "direct-public": 7, "inquiry-post": 3, "inquiry-pre": 3, "tender-post": 3, "tender-pre": 3 } },
+            { id: 9, name: "中标/成交候选人公示", times: { "direct-no-public": 0, "direct-public": 0, "inquiry-post": 4, "inquiry-pre": 4, "tender-post": 4, "tender-pre": 4 } },
+            { id: 10, name: "采购结果审批", times: { "direct-no-public": 5, "direct-public": 5, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 7, "tender-pre": 7 } },
+            { id: 11, name: "采购合同拟定、审批、订单创建", times: { "direct-no-public": 14, "direct-public": 14, "inquiry-post": 14, "inquiry-pre": 14, "tender-post": 14, "tender-pre": 14 } },
+            { id: 12, name: "标准设备到货（国产）", times: { "direct-no-public": 30, "direct-public": 30, "inquiry-post": 30, "inquiry-pre": 30, "tender-post": 30, "tender-pre": 30 } },
+            { id: 13, name: "标准设备到货（进口）", times: { "direct-no-public": 45, "direct-public": 45, "inquiry-post": 45, "inquiry-pre": 45, "tender-post": 45, "tender-pre": 45 } }
+        ];
+
+        // 表单提交事件
+        document.getElementById('calculator-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            calculateProcurementSchedule();
+        });
+
+        // 计算采购流程时间
+        function calculateProcurementSchedule() {
+            const procurementMethod = document.getElementById('procurement-method').value;
+            const startDate = new Date(document.getElementById('start-date').value);
+            const resultDiv = document.getElementById('result');
+
+            // 生成时间计划
+            let currentDate = new Date(startDate);
+            const schedule = [];
+
+            for (const step of procurementData) {
+                const days = step.times[procurementMethod];
+                if (days > 0) {
+                    // 计算结束时间
+                    const endDate = new Date(currentDate);
+                    endDate.setDate(endDate.getDate() + days - 1);
+                    
+                    schedule.push({
+                        name: step.name,
+                        date: endDate.toISOString().split('T')[0]
+                    });
+
+                    // 更新当前日期为下一个环节的开始日期
+                    currentDate = new Date(endDate);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
+
+            // 显示结果
+            displayResult(schedule);
+        }
+
+        // 显示结果
+        function displayResult(schedule) {
+            const resultDiv = document.getElementById('result');
+            
+            if (schedule.length === 0) {
+                resultDiv.innerHTML = '<p>没有找到对应的采购流程数据</p>';
+                return;
+            }
+
+            let html = '<h2>采购流程时间计划</h2>';
+            html += '<table>';
+            html += '<tr><th>核心环节</th><th>时间</th></tr>';
+
+            for (const item of schedule) {
+                html += `<tr><td>${item.name}</td><td>${item.date}</td></tr>`;
+            }
+
+            html += '</table>';
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
