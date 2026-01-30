@@ -93,7 +93,7 @@
                     <option value="tender-pre">邀请/公开招标(资格预审)</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="date-input-container">
                 <label for="start-date">开始时间</label>
                 <input type="date" id="start-date" required>
             </div>
@@ -118,8 +118,10 @@
             { id: 9, name: "中标/成交候选人公示", times: { "direct-no-public": 0, "direct-public": 0, "inquiry-post": 4, "inquiry-pre": 4, "tender-post": 4, "tender-pre": 4 } },
             { id: 10, name: "采购结果审批", times: { "direct-no-public": 5, "direct-public": 5, "inquiry-post": 5, "inquiry-pre": 5, "tender-post": 7, "tender-pre": 7 } },
             { id: 11, name: "采购合同拟定、审批、订单创建", times: { "direct-no-public": 14, "direct-public": 14, "inquiry-post": 14, "inquiry-pre": 14, "tender-post": 14, "tender-pre": 14 } },
-            { id: 12, name: "标准设备到货（国产）", times: { "direct-no-public": 30, "direct-public": 30, "inquiry-post": 30, "inquiry-pre": 30, "tender-post": 30, "tender-pre": 30 } },
-            { id: 13, name: "标准设备到货（进口）", times: { "direct-no-public": 45, "direct-public": 45, "inquiry-post": 45, "inquiry-pre": 45, "tender-post": 45, "tender-pre": 45 } }
+            { id: 12, name: "概预算（并行）", times: { "direct-no-public": 4, "direct-public": 4, "inquiry-post": 4, "inquiry-pre": 4, "tender-post": 4, "tender-pre": 4 } },
+            { id: 13, name: "业务解构（并行）", times: { "direct-no-public": 2, "direct-public": 2, "inquiry-post": 2, "inquiry-pre": 2, "tender-post": 2, "tender-pre": 2 } },
+            { id: 14, name: "合同解析（并行）", times: { "direct-no-public": 2, "direct-public": 2, "inquiry-post": 2, "inquiry-pre": 2, "tender-post": 2, "tender-pre": 2 } },
+            { id: 15, name: "项目立项", times: { "direct-no-public": 4, "direct-public": 4, "inquiry-post": 4, "inquiry-pre": 4, "tender-post": 4, "tender-pre": 4 } }
         ];
 
         // 表单提交事件
@@ -136,23 +138,60 @@
 
             // 生成时间计划
             let currentDate = new Date(startDate);
+            let contractEndDate = null;
+            let budgetEndDate = null;
             const schedule = [];
 
+            // 处理流程
             for (const step of procurementData) {
                 const days = step.times[procurementMethod];
                 if (days > 0) {
-                    // 计算结束时间
-                    const endDate = new Date(currentDate);
-                    endDate.setDate(endDate.getDate() + days - 1);
+                    let endDate;
+                    
+                    if (step.name === '采购合同拟定、审批、订单创建') {
+                        // 采购合同环节：从上一个流程的结束时间计算
+                        endDate = new Date(currentDate);
+                        endDate.setDate(endDate.getDate() + days - 1);
+                        
+                        // 记录采购合同的结束时间
+                        contractEndDate = endDate;
+                        
+                        // 更新当前日期为下一个环节的开始日期
+                        currentDate = new Date(endDate);
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    } else if (step.name === '概预算（并行）' && contractEndDate) {
+                        // 概预算：在采购合同完成后进行（从采购合同结束日期的下一天开始）
+                        endDate = new Date(contractEndDate);
+                        endDate.setDate(endDate.getDate() + days);
+                        
+                        // 记录概预算的结束时间
+                        budgetEndDate = endDate;
+                    } else if (step.name === '项目立项' && budgetEndDate) {
+                        // 项目立项：在概预算完成后进行（从概预算结束日期的下一天开始）
+                        endDate = new Date(budgetEndDate);
+                        endDate.setDate(endDate.getDate() + days);
+                    } else if (step.name === '业务解构（并行）' && contractEndDate) {
+                        // 业务解构：在采购合同完成后进行（从采购合同结束日期的下一天开始）
+                        endDate = new Date(contractEndDate);
+                        endDate.setDate(endDate.getDate() + days);
+                    } else if (step.name === '合同解析（并行）' && contractEndDate) {
+                        // 合同解析：在采购合同完成后进行（从采购合同结束日期的下一天开始）
+                        endDate = new Date(contractEndDate);
+                        endDate.setDate(endDate.getDate() + days);
+                    } else {
+                        // 其他串行流程：从上一个流程的结束时间计算
+                        endDate = new Date(currentDate);
+                        endDate.setDate(endDate.getDate() + days - 1);
+                        
+                        // 更新当前日期为下一个串行环节的开始日期
+                        currentDate = new Date(endDate);
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
                     
                     schedule.push({
                         name: step.name,
                         date: endDate.toISOString().split('T')[0]
                     });
-
-                    // 更新当前日期为下一个环节的开始日期
-                    currentDate = new Date(endDate);
-                    currentDate.setDate(currentDate.getDate() + 1);
                 }
             }
 
@@ -180,6 +219,19 @@
             html += '</table>';
             resultDiv.innerHTML = html;
         }
+
+        // 添加日期输入框容器的点击事件
+        document.getElementById('date-input-container').addEventListener('click', function(e) {
+            // 如果点击的不是日期输入框本身，就让输入框获得焦点并弹出日历
+            if (e.target.id !== 'start-date') {
+                const dateInput = document.getElementById('start-date');
+                dateInput.focus();
+                // 尝试打开日期选择器
+                if (dateInput.showPicker) {
+                    dateInput.showPicker();
+                }
+            }
+        });
     </script>
 </body>
 </html>
