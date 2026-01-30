@@ -220,16 +220,21 @@
             resultDiv.innerHTML = html;
         }
 
-        // 添加日期输入框容器的点击事件
-        document.getElementById('date-input-container').addEventListener('click', function(e) {
-            // 如果点击的不是日期输入框本身，就让输入框获得焦点并弹出日历
-            if (e.target.id !== 'start-date') {
-                const dateInput = document.getElementById('start-date');
-                dateInput.focus();
-                // 尝试打开日期选择器
-                if (dateInput.showPicker) {
-                    dateInput.showPicker();
-                }
+        // 为日期输入框添加点击事件，点击任意位置都能弹出日历
+        document.getElementById('start-date').addEventListener('click', function(e) {
+            // 尝试打开日期选择器
+            if (this.showPicker) {
+                this.showPicker();
+            }
+        });
+
+        // 点击标签也能弹出日历
+        document.querySelector('label[for="start-date"]').addEventListener('click', function(e) {
+            e.preventDefault();
+            const dateInput = document.getElementById('start-date');
+            dateInput.focus();
+            if (dateInput.showPicker) {
+                dateInput.showPicker();
             }
         });
     </script>
