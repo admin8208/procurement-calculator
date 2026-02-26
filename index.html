@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>采购流程时间计算器</title>
+    <title>采购及后向流程预计时间</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -98,12 +98,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>采购流程时间计算器</h1>
+        <h1>采购及后向流程预计时间</h1>
         <div class="info-box">
             <h3>采购方式说明：</h3>
             <p><strong>1. 直接采购：</strong>即单一来源采购，符合要求即可。其中，保密项目为非公示，其余一般都为公示。</p>
             <p><strong>2. 邀请/公开询比：</strong>项目金额在100万-400万的采用此方式。资格后审：先比方案后审资格。资格预审：先审资格后比方案。（广州一般为资格后审。）</p>
             <p><strong>3. 邀请/公开招标：</strong>项目金额大于400万的采用此方法。资格后审：先评标后审资格。资格预审：先审资格后招标。（广州一般为资格后审。）</p>
+            <p><strong>4. 流程开始时间：</strong>合同归档且将项目相关文件通过邮件发送到项目组的时间。项目相关文件如下：1、效益评估表 2、客响单审批截图 3、资费审批截图 4、合同审批截图 5、采购清单（收支清单）</p>
         </div>
         <form id="calculator-form">
             <div class="form-group">
@@ -118,7 +119,7 @@
                 </select>
             </div>
             <div class="form-group" id="date-input-container">
-                <label for="start-date">开始时间</label>
+                <label for="start-date">流程开始时间（邮件发送时间）</label>
                 <input type="date" id="start-date" required>
             </div>
             <button type="submit">生成时间计划</button>
